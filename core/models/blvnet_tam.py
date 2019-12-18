@@ -30,8 +30,6 @@ class bLVNet_TAM(nn.Module):
         self.dropout = params.dropout
         self.modality = 'rgb'
 
-        # new category
-        self.consensus = SegmentConsensus(consensus_type='avg', dim=1)
         # get the dim of feature vec
         feature_dim = getattr(self.baseline_model, 'fc').in_features
         # update the fc layer and initialize it
@@ -66,38 +64,8 @@ class bLVNet_TAM(nn.Module):
         n_t, c = base_out.shape
         curr_num_frames = n_t // n
         base_out = base_out.view(n, curr_num_frames, c)
+        # dim of base_out: [N, 1, num_classes]
         # average all frames
-        out = self.consensus(base_out)
-        # dim of out: [N, 1, num_classes]
-        out = out.squeeze(1)
+        out = torch.mean(base_out, dim=1)
         # dim of out: [N, num_classes]
         return out
-
-
-class SegmentConsensus(torch.autograd.Function):
-
-    def __init__(self, consensus_type, dim=1):
-        self.consensus_type = consensus_type
-        self.dim = dim
-        self.shape = None
-
-    def forward(self, input_tensor):
-        self.shape = input_tensor.size()
-        if self.consensus_type == 'avg':
-            output = input_tensor.mean(dim=self.dim, keepdim=True)
-        elif self.consensus_type == 'identity':
-            output = input_tensor
-        else:
-            output = None
-
-        return output
-
-    def backward(self, grad_output):
-        if self.consensus_type == 'avg':
-            grad_in = grad_output.expand(self.shape) / float(self.shape[self.dim])
-        elif self.consensus_type == 'identity':
-            grad_in = grad_output
-        else:
-            grad_in = None
-
-        return grad_in
