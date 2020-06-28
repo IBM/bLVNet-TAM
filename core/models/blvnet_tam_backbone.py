@@ -364,11 +364,12 @@ def blvnet_tam_backbone(depth, alpha, beta, num_frames, blending_frames=3, input
 
     if imagenet_blnet_pretrained:
         checkpoint = torch.load(model_urls['blresnet{}'.format(depth)], map_location='cpu')
+        print("loading weights from ImageNet-pretrained blnet, blresnet{}".format(depth),
+              flush=True)
         # fixed parameter names in order to load the weights correctly
         state_d = OrderedDict()
         if input_channels != 3:  # flow
-            print("loading weights from ImageNet-pretrained blnet, blresnet{}".format(depth),
-                  flush=True)
+            print("Convert RGB model to Flow")
             for key, value in checkpoint['state_dict'].items():
                 new_key = key.replace('module.', '')
                 if "conv1.weight" in key:
@@ -382,6 +383,12 @@ def blvnet_tam_backbone(depth, alpha, beta, num_frames, blending_frames=3, input
                 else:
                     new_value = value
                 state_d[new_key] = new_value
-        model.load_state_dict(state_d, strict=False)
+        else:
+            print("Loading RGB model")
+            for key, value in checkpoint['state_dict'].items():
+                new_key = key.replace('module.', '')                
+                state_d[new_key] = value
+        msg = model.load_state_dict(state_d, strict=False)
+        print(msg, flush=True)
 
     return model
