@@ -114,8 +114,7 @@ class VideoDataSet(data.Dataset):
 
         num_try = 0
         image_path_file = os.path.join(self.root_path, directory, self.image_tmpl.format(idx))
-        image_path_file = image_path_file.replace("/home/chenrich/dataset/something2something_v2_of", 
-                                                  "/gpfs/wscgpfs02/qfan/action_data/something2something-v2-of")
+
         img = None
         while num_try < 10:
             try:
